@@ -22,6 +22,24 @@
         hls.loadSource(videoSrc);
         hls.attachMedia(video);
 
+        // Log and recover from errors if needed (optional but useful)
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            console.error("HLS error:", data);
+            if (data.fatal) {
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        hls.startLoad();
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        hls.recoverMediaError();
+                        break;
+                    default:
+                        hls.destroy();
+                        break;
+                }
+            }
+        });
+
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
             const levels = hls.levels;
             const selector = document.getElementById('quality-selector');
@@ -35,33 +53,18 @@
 
             selector.addEventListener('change', function () {
                 const selectedLevel = parseInt(this.value);
+                const currentTime = video.currentTime;
+
                 hls.currentLevel = selectedLevel;
+                video.currentTime = currentTime;
+                hls.startLoad(); // Resume segment fetching only from current point
             });
 
-            // Require user interaction to play (avoids autoplay error)
+            // Require user interaction to play (avoids autoplay block)
             document.body.addEventListener('click', function playOnce() {
                 video.play().catch(e => console.warn('Play blocked:', e));
                 document.body.removeEventListener('click', playOnce);
             });
-        });
-
-        hls.on(Hls.Events.ERROR, function (event, data) {
-            console.error("HLS error:", data);
-            if (data.fatal) {
-                switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        console.error("Fatal network error encountered. Try reloading.");
-                        hls.startLoad();
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        console.error("Fatal media error encountered. Attempting recovery.");
-                        hls.recoverMediaError();
-                        break;
-                    default:
-                        hls.destroy();
-                        break;
-                }
-            }
         });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
