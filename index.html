@@ -13,49 +13,44 @@
   <video id="video" width="720" height="405" controls></video>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script>
-    const video = document.getElementById('video');
-    const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
+<script>
+const video = document.getElementById('video');
+const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
 
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(videoSrc);
-      hls.attachMedia(video);
+if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(videoSrc);
+    hls.attachMedia(video);
 
-      // Allow CORS on GitHub Pages
-      hls.config.xhrSetup = function(xhr, url) {
-        xhr.withCredentials = false;
-      };
+    // ✅ Add this block here:
+    hls.on(Hls.Events.ERROR, function (event, data) {
+        console.error("HLS error:", data);
+    });
 
-      hls.on(Hls.Events.MANIFEST_PARSED, function () {
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
         const levels = hls.levels;
         const selector = document.getElementById('quality-selector');
 
         levels.forEach((level, index) => {
-          const option = document.createElement('option');
-          option.value = index;
-          option.text = `${level.height}p`;
-          selector.appendChild(option);
+            const option = document.createElement('option');
+            option.value = index;
+            option.text = `${level.height}p`;
+            selector.appendChild(option);
         });
-
-        const autoOption = document.createElement('option');
-        autoOption.value = -1;
-        autoOption.text = 'Auto';
-        selector.insertBefore(autoOption, selector.firstChild);
-        selector.value = hls.currentLevel;
 
         selector.addEventListener('change', function () {
-          hls.currentLevel = parseInt(this.value);
+            const selectedLevel = parseInt(this.value);
+            hls.currentLevel = selectedLevel;
         });
 
         video.play();
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = videoSrc;
-      video.addEventListener('loadedmetadata', () => {
+    });
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = videoSrc;
+    video.addEventListener('loadedmetadata', () => {
         video.play();
-      });
-    }
-  </script>
+    });
+}
+</script>
 </body>
 </html>
