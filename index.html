@@ -38,7 +38,11 @@
                 hls.currentLevel = selectedLevel;
             });
 
-            video.play();
+            // Require user interaction to play (avoids autoplay error)
+            document.body.addEventListener('click', function playOnce() {
+                video.play().catch(e => console.warn('Play blocked:', e));
+                document.body.removeEventListener('click', playOnce);
+            });
         });
 
         hls.on(Hls.Events.ERROR, function (event, data) {
