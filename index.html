@@ -6,51 +6,26 @@
 </head>
 <body>
   <h2>My HLS Video Stream</h2>
-
-  <label for="quality-selector"><strong>Select Quality:</strong></label>
-  <select id="quality-selector"></select>
-
   <video id="video" width="720" height="405" controls></video>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<script>
-const video = document.getElementById('video');
-const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
+  <script>
+    const video = document.getElementById('video');
+    const videoSrc = 'https://yourusername.github.io/video_stream/480p.m3u8';
 
-if (Hls.isSupported()) {
-    const hls = new Hls();
-    hls.loadSource(videoSrc);
-    hls.attachMedia(video);
-
-    // ✅ Add this block here:
-    hls.on(Hls.Events.ERROR, function (event, data) {
-        console.error("HLS error:", data);
-    });
-
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        const levels = hls.levels;
-        const selector = document.getElementById('quality-selector');
-
-        levels.forEach((level, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.text = `${level.height}p`;
-            selector.appendChild(option);
-        });
-
-        selector.addEventListener('change', function () {
-            const selectedLevel = parseInt(this.value);
-            hls.currentLevel = selectedLevel;
-        });
-
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(videoSrc);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play();
-    });
-} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.src = videoSrc;
-    video.addEventListener('loadedmetadata', () => {
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = videoSrc;
+      video.addEventListener('loadedmetadata', () => {
         video.play();
-    });
-}
-</script>
+      });
+    }
+  </script>
 </body>
 </html>
