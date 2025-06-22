@@ -1,13 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>HLS.js Video Player</title>
+  <link rel="icon" href="favicon.ico" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    video {
+      display: block;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
   <h2>My HLS Video Stream</h2>
 
-  <label for="quality-selector"><strong>Select Quality:</strong></label>
+  <label for="quality-selector">Select Quality:</label>
   <select id="quality-selector"></select>
 
   <video id="video" width="720" height="405" controls></video>
@@ -15,44 +29,48 @@
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     const video = document.getElementById('video');
-    const selector = document.getElementById('quality-selector');
     const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
+    const selector = document.getElementById('quality-selector');
 
     if (Hls.isSupported()) {
-      const hls = new Hls({
-        startLevel: 0, // try to start at 480p
-        autoStartLoad: true
-      });
+      const hls = new Hls();
+
       hls.loadSource(videoSrc);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        const levels = hls.levels;
+        // Disable ABR and start at 480p (usually index 0)
+        hls.autoLevelEnabled = false;
+        hls.currentLevel = 0;
 
-        levels.forEach((level, index) => {
+        // Populate quality options
+        hls.levels.forEach((level, index) => {
           const option = document.createElement('option');
           option.value = index;
           option.text = `${level.height}p`;
           selector.appendChild(option);
         });
 
-        // Set default selected option
-        selector.value = hls.startLevel;
+        // Set initial selector value
+        selector.value = hls.currentLevel;
 
+        // Handle manual resolution switching
         selector.addEventListener('change', function () {
-          const selectedLevel = parseInt(this.value);
-          hls.currentLevel = selectedLevel;
+          hls.currentLevel = parseInt(this.value);
         });
       });
 
-      hls.on(Hls.Events.ERROR, function (event, data) {
-        console.error("HLS error:", data);
+      // Optional: log any HLS errors
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('HLS error:', data);
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
+              console.warn('Network error: reloading stream...');
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn('Media error: attempting recovery...');
               hls.recoverMediaError();
               break;
             default:
@@ -61,8 +79,8 @@
           }
         }
       });
-
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Fallback for Safari
       video.src = videoSrc;
     }
   </script>
