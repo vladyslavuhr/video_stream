@@ -5,27 +5,47 @@
     <title>HLS.js Video Player</title>
 </head>
 <body>
-<h2>My HLS Video Stream</h2>
-<video id="video" width="720" height="405" controls></video>
+  <h2>My HLS Video Stream</h2>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <label for="quality-selector"><strong>Select Quality:</strong></label>
+  <select id="quality-selector"></select>
+
+  <video id="video" width="720" height="405" controls></video>
+
+ <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
-    const video = document.getElementById('video');
-    const videoSrc = 'https://vladyslavuhr.github.io/video_stream/720p.m3u8';
+const video = document.getElementById('video');
+const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
 
-    if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play();
+if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(videoSrc);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        const levels = hls.levels;
+        const selector = document.getElementById('quality-selector');
+
+        levels.forEach((level, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.text = `${level.height}p`;
+            selector.appendChild(option);
         });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
-        video.addEventListener('loadedmetadata', () => {
-            video.play();
+
+        selector.addEventListener('change', function () {
+            const selectedLevel = parseInt(this.value);
+            hls.currentLevel = selectedLevel;
         });
-    }
+
+        video.play();
+    });
+} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = videoSrc;
+    video.addEventListener('loadedmetadata', () => {
+        video.play();
+    });
+}
 </script>
 </body>
 </html>
