@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>HLS.js Video Player</title>
+  <meta charset="UTF-8">
+  <title>HLS.js Video Player</title>
 </head>
 <body>
   <h2>My HLS Video Stream</h2>
@@ -15,67 +15,55 @@
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     const video = document.getElementById('video');
+    const selector = document.getElementById('quality-selector');
     const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
 
     if (Hls.isSupported()) {
-        const hls = new Hls({
-            startLevel: 0  // ✅ Start with lowest quality
-        });
-        hls.loadSource(videoSrc);
-        hls.attachMedia(video);
+      const hls = new Hls({
+        startLevel: 0, // try to start at 480p
+        autoStartLoad: true
+      });
+      hls.loadSource(videoSrc);
+      hls.attachMedia(video);
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            const levels = hls.levels;
-            const selector = document.getElementById('quality-selector');
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        const levels = hls.levels;
 
-            levels.forEach((level, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.text = `${level.height}p`;
-                selector.appendChild(option);
-            });
-
-            // Set dropdown to match currentLevel
-            selector.value = hls.currentLevel;
-
-            selector.addEventListener('change', function () {
-                const selectedLevel = parseInt(this.value);
-                const currentTime = video.currentTime;
-
-                hls.currentLevel = selectedLevel;
-                video.currentTime = currentTime;
-                hls.startLoad(); // Reload segments at new resolution
-            });
-
-            // Wait for user click to play
-            document.body.addEventListener('click', function playOnce() {
-                video.play().catch(e => console.warn('Play blocked:', e));
-                document.body.removeEventListener('click', playOnce);
-            });
+        levels.forEach((level, index) => {
+          const option = document.createElement('option');
+          option.value = index;
+          option.text = `${level.height}p`;
+          selector.appendChild(option);
         });
 
-        hls.on(Hls.Events.ERROR, function (event, data) {
-            console.error("HLS error:", data);
-            if (data.fatal) {
-                switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        hls.startLoad();
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        hls.recoverMediaError();
-                        break;
-                    default:
-                        hls.destroy();
-                        break;
-                }
-            }
+        // Set default selected option
+        selector.value = hls.startLevel;
+
+        selector.addEventListener('change', function () {
+          const selectedLevel = parseInt(this.value);
+          hls.currentLevel = selectedLevel;
         });
+      });
+
+      hls.on(Hls.Events.ERROR, function (event, data) {
+        console.error("HLS error:", data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hls.recoverMediaError();
+              break;
+            default:
+              hls.destroy();
+              break;
+          }
+        }
+      });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = videoSrc;
-        video.addEventListener('loadedmetadata', () => {
-            video.play();
-        });
+      video.src = videoSrc;
     }
   </script>
 </body>
