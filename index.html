@@ -18,11 +18,42 @@
     const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
 
     if (Hls.isSupported()) {
-        const hls = new Hls();
+        const hls = new Hls({
+            startLevel: 0  // ✅ Start with lowest quality
+        });
         hls.loadSource(videoSrc);
         hls.attachMedia(video);
 
-        // Log and recover from errors if needed (optional but useful)
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            const levels = hls.levels;
+            const selector = document.getElementById('quality-selector');
+
+            levels.forEach((level, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.text = `${level.height}p`;
+                selector.appendChild(option);
+            });
+
+            // Set dropdown to match currentLevel
+            selector.value = hls.currentLevel;
+
+            selector.addEventListener('change', function () {
+                const selectedLevel = parseInt(this.value);
+                const currentTime = video.currentTime;
+
+                hls.currentLevel = selectedLevel;
+                video.currentTime = currentTime;
+                hls.startLoad(); // Reload segments at new resolution
+            });
+
+            // Wait for user click to play
+            document.body.addEventListener('click', function playOnce() {
+                video.play().catch(e => console.warn('Play blocked:', e));
+                document.body.removeEventListener('click', playOnce);
+            });
+        });
+
         hls.on(Hls.Events.ERROR, function (event, data) {
             console.error("HLS error:", data);
             if (data.fatal) {
@@ -38,33 +69,6 @@
                         break;
                 }
             }
-        });
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            const levels = hls.levels;
-            const selector = document.getElementById('quality-selector');
-
-            levels.forEach((level, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.text = `${level.height}p`;
-                selector.appendChild(option);
-            });
-
-            selector.addEventListener('change', function () {
-                const selectedLevel = parseInt(this.value);
-                const currentTime = video.currentTime;
-
-                hls.currentLevel = selectedLevel;
-                video.currentTime = currentTime;
-                hls.startLoad(); // Resume segment fetching only from current point
-            });
-
-            // Require user interaction to play (avoids autoplay block)
-            document.body.addEventListener('click', function playOnce() {
-                video.play().catch(e => console.warn('Play blocked:', e));
-                document.body.removeEventListener('click', playOnce);
-            });
         });
 
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
