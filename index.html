@@ -1,30 +1,70 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>HLS.js Video Player</title>
+    <meta charset="UTF-8">
+    <title>HLS.js Video Player</title>
 </head>
 <body>
   <h2>My HLS Video Stream</h2>
+
+  <label for="quality-selector"><strong>Select Quality:</strong></label>
+  <select id="quality-selector"></select>
+
   <video id="video" width="720" height="405" controls></video>
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
     const video = document.getElementById('video');
-    const videoSrc = 'https://yourusername.github.io/video_stream/480p.m3u8';
+    const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
 
     if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(videoSrc);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play();
-      });
+        const hls = new Hls();
+        hls.loadSource(videoSrc);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            const levels = hls.levels;
+            const selector = document.getElementById('quality-selector');
+
+            levels.forEach((level, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.text = `${level.height}p`;
+                selector.appendChild(option);
+            });
+
+            selector.addEventListener('change', function () {
+                const selectedLevel = parseInt(this.value);
+                hls.currentLevel = selectedLevel;
+            });
+
+            video.play();
+        });
+
+        hls.on(Hls.Events.ERROR, function (event, data) {
+            console.error("HLS error:", data);
+            if (data.fatal) {
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        console.error("Fatal network error encountered. Try reloading.");
+                        hls.startLoad();
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        console.error("Fatal media error encountered. Attempting recovery.");
+                        hls.recoverMediaError();
+                        break;
+                    default:
+                        hls.destroy();
+                        break;
+                }
+            }
+        });
+
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = videoSrc;
-      video.addEventListener('loadedmetadata', () => {
-        video.play();
-      });
+        video.src = videoSrc;
+        video.addEventListener('loadedmetadata', () => {
+            video.play();
+        });
     }
   </script>
 </body>
