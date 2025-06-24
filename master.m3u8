@@ -1,11 +1,6 @@
-# tells the HLS parser that this is an Extended M3U file
 #EXTM3U
-
-# specifies the HLS protocol version, Version 3 supports floating-point durations
 #EXT-X-VERSION:3
 
-# tells the player that there is a variant playlist for 1080p video. indicates an average bitrate of ~5 Mbps. decides which quality to use. filename of the 1080p playlist which contains the .ts chunks for this resolution
-# 1080p
 #EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080
 1080p.m3u8
 
