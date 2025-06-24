@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- tets the character encoding to UTF-8 -->
   <meta charset="UTF-8" />
+  <!-- title of the web page -->
   <title>HLS.js Video Player</title>
   <link rel="icon" href="favicon.ico" />
+  <!-- this is CSS styling for how the page looks -->
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -18,6 +21,7 @@
     }
   </style>
 </head>
+<!-- the visible page content -->
 <body>
   <h2>My HLS Video Stream</h2>
 
@@ -26,24 +30,33 @@
 
   <video id="video" width="720" height="405" controls></video>
 
+  <!-- loads the hls.js library from the internet -->
+  <!-- this library allows the browser to play .m3u8 HLS streams -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
+    // gets the video element and the dropdown
     const video = document.getElementById('video');
+    // sets the link to master.m3u8 file
     const videoSrc = 'https://vladyslavuhr.github.io/video_stream/master.m3u8';
     const selector = document.getElementById('quality-selector');
 
+    // checks if hls.js works in this browser
     if (Hls.isSupported()) {
+      // if yes, creates a new HLS player
       const hls = new Hls();
 
+      // tells hls.js to load video and attach it to the video player
       hls.loadSource(videoSrc);
       hls.attachMedia(video);
 
+      // populate quality dropdown
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        // Disable ABR and start at 480p (usually index 0)
+        // don't auto-switch quality
         hls.autoLevelEnabled = false;
+        // start at 480p
         hls.currentLevel = 0;
 
-        // Populate quality options
+        // fills the dropdown with quality options like 1080p, 720p, 480p
         hls.levels.forEach((level, index) => {
           const option = document.createElement('option');
           option.value = index;
@@ -51,16 +64,14 @@
           selector.appendChild(option);
         });
 
-        // Set initial selector value
+        // handle manual resolution switching
         selector.value = hls.currentLevel;
-
-        // Handle manual resolution switching
         selector.addEventListener('change', function () {
           hls.currentLevel = parseInt(this.value);
         });
       });
 
-      // Optional: log any HLS errors
+      // tries to recover from network/media errors, if not possible, it stops the video
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS error:', data);
         if (data.fatal) {
@@ -79,8 +90,8 @@
           }
         }
       });
+      // some browsers support .m3u8 natively — this is a fallback
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Fallback for Safari
       video.src = videoSrc;
     }
   </script>
